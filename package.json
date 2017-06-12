@@ -1,0 +1,46 @@
+{
+  "name": "nah",
+  "version": "0.0.2",
+  "description": "Nah is a simple Node.js version manager.",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build",
+    "watch": "tsc --watch",
+    "test": "tap build/test",
+    "pretest": "tslint -c tslint.json 'src/**/*.ts'"
+  },
+  "bin": {
+    "nah": "build/src/bin/nah.js"
+  },
+  "author": "Jiri Pospisil <jiri@sensible.io> (http://jpospisil.com/)",
+  "license": "ISC",
+  "dependencies": {
+    "chalk": "^1.1.3",
+    "mkdirp": "^0.5.1",
+    "node-fetch": "^1.7.1",
+    "progress": "^2.0.0",
+    "tar": "^3.1.5",
+    "tmp": "0.0.31",
+    "yargs": "^8.0.1"
+  },
+  "files": [
+    "build/src",
+    "npm-shrinkwrap.json"
+  ],
+  "devDependencies": {
+    "@types/chalk": "^0.4.31",
+    "@types/mkdirp": "^0.3.29",
+    "@types/node": "^7.0.29",
+    "@types/node-fetch": "^1.6.7",
+    "@types/progress": "^2.0.0",
+    "@types/tmp": "0.0.33",
+    "@types/yargs": "^6.6.0",
+    "tap": "^10.3.3",
+    "tslint": "^5.4.3",
+    "typescript": "^2.3.4"
+  },
+  "yargs": {
+    "parse-numbers": false
+  }
+}

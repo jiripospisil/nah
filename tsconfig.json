@@ -1,0 +1,19 @@
+{
+    "compilerOptions": {
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "target": "es2015",
+        "skipLibCheck": true,
+        "skipDefaultLibCheck": true,
+        "alwaysStrict": true,
+        "strictNullChecks": true,
+        "sourceMap": true,
+        "forceConsistentCasingInFileNames": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
+        "outDir": "build"
+    },
+    "exclude": [
+        "node_modules/"
+    ]
+}
