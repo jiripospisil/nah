@@ -18,7 +18,7 @@ export function initialize() {
   }
 }
 
-export function hook(name) {
+export function hook(name: string) {
   if (name === "post_install") {
     return path.join(constants.STORAGE_HOOKS, "post_install.sh");
   }
@@ -91,7 +91,7 @@ export function current(): Version | null {
   }
 }
 
-export function makeCurrent(ver): void {
+export function makeCurrent(ver: Version): void {
   const p = which(ver);
 
   if (!p) {

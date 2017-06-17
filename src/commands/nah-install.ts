@@ -6,7 +6,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 import * as chalk from "chalk";
-import fetch from "node-fetch";
+import fetch, { Response } from "node-fetch";
 import * as ProgressBar from "progress";
 import * as tmp from "tmp";
 
@@ -14,11 +14,17 @@ import * as infoBuilder from "../lib/info_builder";
 import * as log from "../lib/log";
 import * as remoteStorage from "../lib/remote_storage";
 import * as storage from "../lib/storage";
+import Version from "../lib/version";
 import * as resolver from "../lib/version_resolver";
+
+interface ResponseState {
+  uri: string;
+  response: Response;
+}
 
 tmp.setGracefulCleanup();
 
-function createTmpFileStream(name) {
+function createTmpFileStream(name: string) {
   const tmpDir = tmp.dirSync();
   const filename = path.join(tmpDir.name, name);
 
@@ -28,22 +34,22 @@ function createTmpFileStream(name) {
   };
 }
 
-function downloadFile(uri: string, file: fs.WriteStream) {
+function downloadFile(uri: string, file: fs.WriteStream): Promise<ResponseState> {
   return fetch(uri)
-    .then((res) => {
-      if (!res.ok) {
-        throw new Error(`Received HTTP "${res.status}" from the server.`);
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`Received HTTP "${response.status}" from the server.`);
       }
-      return res;
+      return response;
     })
-    .then((res) => {
-      res.body.pipe(file);
-      return { uri, res };
+    .then((response) => {
+      response.body.pipe(file);
+      return { uri, response };
     });
 }
 
-function progressBar({ uri, res }) {
-  const length = parseInt(res.headers.get("content-length"), 10);
+function progressBar({ uri, response }: ResponseState) {
+  const length = parseInt(response.headers.get("content-length"), 10);
 
   if (length) {
     const bar = new ProgressBar(`${chalk.green("•")} Downloading "${uri}" [:bar] :percent :etas`, {
@@ -54,12 +60,12 @@ function progressBar({ uri, res }) {
       width: 20,
     });
 
-    res.body.on("data", (chunk) => bar.tick(chunk.length));
+    response.body.on("data", (chunk: Buffer) => bar.tick(chunk.length));
   } else {
     log.info(`Downloading "${uri}"`);
   }
 
-  return new Promise((resolve) => res.body.on("end", resolve));
+  return new Promise((resolve) => response.body.on("end", resolve));
 }
 
 async function download(uri: string, name: string): Promise<string> {
@@ -68,11 +74,11 @@ async function download(uri: string, name: string): Promise<string> {
   return path;
 }
 
-async function downloadChecksum(uri): Promise<string> {
+async function downloadChecksum(uri: string): Promise<string> {
   return await download(uri, "checksum");
 }
 
-async function downloadArchive(uri): Promise<string> {
+async function downloadArchive(uri: string): Promise<string> {
   return await download(uri, "archive");
 }
 
@@ -109,7 +115,7 @@ function runPostInstallHook() {
   });
 }
 
-async function installVersion(ver): Promise<void> {
+async function installVersion(ver: Version): Promise<void> {
   log.info('Version "%s" is not yet installed. Installing...', ver.human);
 
   const info = infoBuilder.build(ver);
@@ -139,7 +145,7 @@ async function installVersion(ver): Promise<void> {
   }
 }
 
-async function handle(version): Promise<void> {
+async function handle(version: string): Promise<void> {
   storage.initialize();
 
   const resolvedVersion = await resolver.resolve(version, remoteStorage);
