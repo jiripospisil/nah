@@ -52,7 +52,9 @@ export function versions(): Version[] {
         path: path.resolve(constants.STORAGE_VERSIONS, ver),
         version: versionName,
       };
-    });
+    })
+    .sort()
+    .reverse();
 }
 
 export function version(ver: Version): Version | null {
