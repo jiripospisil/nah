@@ -1,14 +1,18 @@
 import Yargs = require("yargs");
 
 import * as log from "../lib/log";
+import printVersions from "../lib/print_versions";
 import * as storage from "../lib/storage";
 
 function handle() {
   storage.initialize();
 
   const current = storage.current();
+
   log.info(`Current: ${current ? current.human : "Not set"}`);
-  log.info(`Installed: ${storage.versions().map((v) => v.human).join(", ")}`);
+
+  log.info("Installed:");
+  printVersions(storage.versions().map((version) => version.human), "/", null, process.stdout);
 }
 
 export const command = "ls";
