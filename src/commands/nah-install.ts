@@ -1,14 +1,9 @@
-import Yargs = require("yargs");
-
 import * as child_process from "child_process";
 import * as crypto from "crypto";
-import * as fs from "fs";
-import * as path from "path";
+import * as os from "os";
 
-import * as chalk from "chalk";
-import fetch, { Response } from "node-fetch";
-import * as ProgressBar from "progress";
-import * as tmp from "tmp";
+import Yargs = require("yargs");
+import fetch from "node-fetch";
 
 import * as infoBuilder from "../lib/info_builder";
 import * as log from "../lib/log";
@@ -17,24 +12,7 @@ import * as storage from "../lib/storage";
 import Version from "../lib/version";
 import * as resolver from "../lib/version_resolver";
 
-interface ResponseState {
-  uri: string;
-  response: Response;
-}
-
-tmp.setGracefulCleanup();
-
-function createTmpFileStream(name: string) {
-  const tmpDir = tmp.dirSync();
-  const filename = path.join(tmpDir.name, name);
-
-  return {
-    path: filename,
-    stream: fs.createWriteStream(filename),
-  };
-}
-
-function downloadFile(uri: string, file: fs.WriteStream): Promise<ResponseState> {
+function downloadFile(uri: string): Promise<Buffer> {
   return fetch(uri)
     .then((response) => {
       if (!response.ok) {
@@ -42,44 +20,17 @@ function downloadFile(uri: string, file: fs.WriteStream): Promise<ResponseState>
       }
       return response;
     })
-    .then((response) => {
-      response.body.pipe(file);
-      return { uri, response };
-    });
-}
-
-function progressBar({ uri, response }: ResponseState) {
-  const length = parseInt(response.headers.get("content-length"), 10);
-
-  if (length) {
-    const bar = new ProgressBar(`${chalk.green("•")} Downloading "${uri}" [:bar] :percent :etas`, {
-      complete: "=",
-      incomplete: " ",
-      renderThrottle: 32,
-      total: length,
-      width: 20,
-    });
-
-    response.body.on("data", (chunk: Buffer) => bar.tick(chunk.length));
-  } else {
-    log.info(`Downloading "${uri}"`);
-  }
-
-  return new Promise((resolve) => response.body.on("end", resolve));
-}
-
-async function download(uri: string, name: string): Promise<string> {
-  const { path, stream } = createTmpFileStream(name);
-  await downloadFile(uri, stream).then(progressBar);
-  return path;
+    .then((response) => response.buffer());
 }
 
 async function downloadChecksum(uri: string): Promise<string> {
-  return await download(uri, "checksum");
+  log.info(`Downloading checksum from "${uri}"...`);
+  return (await downloadFile(uri)).toString("utf-8");
 }
 
-async function downloadArchive(uri: string): Promise<string> {
-  return await download(uri, "archive");
+function downloadArchive(uri: string): Promise<Buffer> {
+  log.info(`Downloading archive from "${uri}"...`);
+  return downloadFile(uri);
 }
 
 function findChecksum(filename: string, checksum: string): string | null {
@@ -121,23 +72,24 @@ async function installVersion(ver: Version): Promise<void> {
   const info = infoBuilder.build(ver);
 
   try {
-    const checksumPath = await downloadChecksum(info.uris.checksum);
-    const archivePath = await downloadArchive(info.uris.archive);
-
-    const checksum = fs.readFileSync(checksumPath, "utf-8");
-    const archive = fs.readFileSync(archivePath);
+    const checksum = await downloadChecksum(info.uris.checksum);
+    const archive = await downloadArchive(info.uris.archive);
 
     log.info("Verifying checksum...");
     verifyChecksum(info.filename, checksum, archive);
 
     log.info("Extracting...");
-    storage.installVersion(ver, info.name, archivePath);
+    await storage.installVersion(ver, info.name, archive);
 
     log.info("Setting as current...");
     storage.makeCurrent(ver);
 
-    log.info("Running the post-install hook...");
-    runPostInstallHook();
+    if (os.platform() !== "win32") {
+      log.info("Running the post-install hook...");
+      runPostInstallHook();
+    } else {
+      log.info("Skipping the post-install hook because of an unsupported platform");
+    }
 
     log.info("Finished");
   } catch (err) {

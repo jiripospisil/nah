@@ -1,4 +1,6 @@
-export const STORAGE_ROOT = process.env.NAH_STORAGE_ROOT || `${process.env.HOME}/.nah`;
+import { homedir } from "os";
+
+export const STORAGE_ROOT = process.env.NAH_STORAGE_ROOT || `${homedir()}/.nah`;
 export const STORAGE_VERSIONS = process.env.NAH_STORAGE_VERSIONS || `${STORAGE_ROOT}/versions`;
 export const STORAGE_CURRENT_VERSION = process.env.NAH_STORAGE_CURRENT_VERSION || `${STORAGE_ROOT}/current`;
 export const STORAGE_HOOKS = process.env.NAH_STORAGE_HOOKS || `${STORAGE_ROOT}/hooks`;

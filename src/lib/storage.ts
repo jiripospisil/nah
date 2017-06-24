@@ -1,7 +1,8 @@
 import * as fs from "fs";
-import * as mkdirp from "mkdirp";
 import * as path from "path";
-import * as tar from "tar";
+
+import * as decompress from "decompress";
+import * as mkdirp from "mkdirp";
 
 import * as constants from "./constants";
 import * as templates from "./templates";
@@ -108,13 +109,22 @@ export function makeCurrent(ver: Version): void {
     }
   }
 
-  fs.symlinkSync(p, constants.STORAGE_CURRENT_VERSION);
+  fs.symlinkSync(p, constants.STORAGE_CURRENT_VERSION, "junction");
 }
 
-export function installVersion(ver: Version, name: string, archivePath: string): void {
-  tar.extract({ file: archivePath, sync: true, cwd: constants.STORAGE_VERSIONS });
+export function installVersion(ver: Version, name: string, archive: Buffer): Promise<void> {
+  return decompress(archive, constants.STORAGE_VERSIONS).then(() => {
+    const oldName = path.join(constants.STORAGE_VERSIONS, name);
+    const newName = path.join(constants.STORAGE_VERSIONS, ver.full);
 
-  const oldName = path.join(constants.STORAGE_VERSIONS, name);
-  const newName = path.join(constants.STORAGE_VERSIONS, ver.full);
-  fs.renameSync(oldName, newName);
+    return new Promise((resolve, reject) => {
+      fs.rename(oldName, newName, (err) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve();
+        }
+      });
+    });
+  });
 }

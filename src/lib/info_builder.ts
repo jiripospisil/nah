@@ -19,8 +19,9 @@ export function build(version: Version): Info {
   const arch = os.arch();
   const ext = platform === "win32" ? "zip" : "tar.gz";
   const platformForRealsies = platform === "win32" ? "win" : platform;
+  const archForRealsies = arch === "ia32" ? "x86" : arch;
 
-  const name = `node-${version.version}-${platformForRealsies}-${arch}`;
+  const name = `node-${version.version}-${platformForRealsies}-${archForRealsies}`;
   const filename = `${name}.${ext}`;
 
   const uris = {
