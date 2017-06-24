@@ -1,6 +1,6 @@
 {
   "name": "nah",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Nah is a simple Node.js version manager.",
   "main": "index.js",
   "scripts": {
