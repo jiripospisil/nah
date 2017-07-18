@@ -45,8 +45,6 @@ async function handle(version: string): Promise<void> {
       const args = commands.slice(1);
 
       child_process.spawn(executable, args, {
-        detached: true,
-        shell: true,
         stdio: "inherit",
       });
     } else {
