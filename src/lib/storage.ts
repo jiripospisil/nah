@@ -14,7 +14,7 @@ export function initialize() {
 
   const postInstallHook = hook("post_install");
   if (!fs.existsSync(postInstallHook)) {
-    fs.writeFileSync(postInstallHook, templates.hooks.post_install, "utf-8");
+    fs.writeFileSync(postInstallHook, templates.hooks.post_install);
     fs.chmodSync(postInstallHook, "0755");
   }
 }
